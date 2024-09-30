@@ -1,4 +1,4 @@
-package services;
+package gui;
 
 import java.awt.*;
 import java.io.IOException;
@@ -9,6 +9,8 @@ import javax.swing.*;
 import models.Budget;
 import models.Transaction;
 import models.User;
+import services.FileManager;
+import services.TransactionService;
 
 /**
  * MainGUI class provides the graphical user interface for the Personal Finance Management System.
