@@ -2,6 +2,7 @@ package services;
 
 import exceptions.BudgetExceededException;
 import exceptions.InvalidInputException;
+import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import models.Budget;
@@ -15,6 +16,18 @@ import models.User;
  * and performing budget-related checks.
  */
 public class TransactionService {
+
+    private static final String FILE_NAME = "transactions.dat";
+
+    private final Map<User, List<Transaction>> userTransactions;
+
+    /**
+     * Constructor for TransactionService.
+     * Initializes the userTransactions map by loading existing transactions from the file.
+     */
+    public TransactionService() {
+        this.userTransactions = loadTransactions();
+    }
 
     /**
      * Adds a new transaction for a user, performing necessary validations and budget checks.
@@ -39,7 +52,11 @@ public class TransactionService {
         }
 
         // Add the transaction
-        user.addTransaction(transaction);
+        userTransactions.putIfAbsent(user, new ArrayList<>());
+        userTransactions.get(user).add(transaction);
+
+        // Save transactions after adding a new one
+        saveTransactions();
     }
 
     /**
@@ -49,7 +66,8 @@ public class TransactionService {
      * @return A list of all transactions for the user
      */
     public List<Transaction> getUserTransactions(User user) {
-        return user.getTransactions();
+        // Return the user's transactions or an empty list if none exist
+        return userTransactions.getOrDefault(user, new ArrayList<>());
     }
 
     /**
@@ -59,7 +77,7 @@ public class TransactionService {
      * @return The sum of all income transactions
      */
     public double calculateTotalIncome(User user) {
-        return user.getTransactions().stream()
+        return getUserTransactions(user).stream()
                 .filter(t -> t.getType() == TransactionType.INCOME)
                 .mapToDouble(Transaction::getAmount)
                 .sum();
@@ -72,24 +90,27 @@ public class TransactionService {
      * @return The sum of all expense transactions
      */
     public double calculateTotalExpenses(User user) {
-        return user.getTransactions().stream()
+        return getUserTransactions(user).stream()
                 .filter(t -> t.getType() == TransactionType.EXPENSE)
                 .mapToDouble(Transaction::getAmount)
                 .sum();
     }
 
     /**
-     * Calculates the total expenses for a specific category.
+     * Calculates the expenses per category for a given user.
      *
-     * @param user The user for whom to calculate category expenses
-     * @param category The category to calculate expenses for
-     * @return The sum of all expense transactions in the specified category
+     * @param user The user for whom to calculate category-wise expenses
+     * @return A map of category names to the total expenses for each category
      */
-    public double calculateCategoryExpenses(User user, String category) {
-        return user.getTransactions().stream()
-                .filter(t -> t.getType() == TransactionType.EXPENSE && t.getCategory().equals(category))
-                .mapToDouble(Transaction::getAmount)
-                .sum();
+    public Map<String, Double> getCategoryWiseExpenses(User user) {
+        Map<String, Double> categoryExpenses = new HashMap<>();
+        for (Transaction t : getUserTransactions(user)) {
+            if (t.getType() == TransactionType.EXPENSE) {
+                categoryExpenses.put(t.getCategory(),
+                    categoryExpenses.getOrDefault(t.getCategory(), 0.0) + t.getAmount());
+            }
+        }
+        return categoryExpenses;
     }
 
     /**
@@ -106,14 +127,14 @@ public class TransactionService {
     /**
      * Retrieves a list of transactions that exceed the budget limit.
      *
-     * @param transactions The list of transactions to check
+     * @param user The user whose transactions to check
      * @param budget The budget to check against
      * @return A list of expense transactions that exceed the budget limit
      */
-    public List<Transaction> getTransactionsExceedingBudget(List<Transaction> transactions, Budget budget) {
-        return transactions.stream()
-            .filter(t -> t.getType() == TransactionType.EXPENSE && t.getAmount() > budget.getLimit())
-            .collect(Collectors.toList());
+    public List<Transaction> getTransactionsExceedingBudget(User user, Budget budget) {
+        return getUserTransactions(user).stream()
+                .filter(t -> t.getType() == TransactionType.EXPENSE && t.getAmount() > budget.getLimit())
+                .collect(Collectors.toList());
     }
 
     /**
@@ -133,16 +154,40 @@ public class TransactionService {
     }
 
     /**
-     * Performs an operation based on the transaction type and budget.
-     * This method is a placeholder and should be implemented based on specific requirements.
-     *
-     * @param user The user for whom the operation is performed
-     * @param transactionType The type of transaction (as a string)
-     * @param budget The budget to consider in the operation
-     * @return The updated or new Budget object after the operation
+     * Saves all user transactions to a file.
+     * Serializes the userTransactions map to persist data.
      */
-    public Budget anotherMethod(User user, String transactionType, Budget budget) {
-        
-        return budget; // Return the budget or a new Budget object based on the method's logic
+    private void saveTransactions() {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(FILE_NAME))) {
+            oos.writeObject(userTransactions);
+        } catch (IOException e) {
+            // Consider logging instead of printing stack trace
+            System.err.println("Error saving transactions: " + e.getMessage());
+        }
+            
+    }
+    public void loadTransactions(User user, List<Transaction> transactions) {
+        userTransactions.put(user, transactions);
+    }
+    
+    /**
+     * Loads all user transactions from a file.
+     * Deserializes the userTransactions map to restore data.
+     *
+     * @return A map containing all user transactions
+     */
+    @SuppressWarnings("unchecked")
+    private Map<User, List<Transaction>> loadTransactions() {
+        File file = new File(FILE_NAME);
+        if (!file.exists()) {
+            return new HashMap<>();
+        }
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+            return (Map<User, List<Transaction>>) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            // Consider logging instead of printing stack trace
+            System.err.println("Error loading transactions: " + e.getMessage());
+            return new HashMap<>();
+        }
     }
 }

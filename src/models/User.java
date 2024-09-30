@@ -1,5 +1,6 @@
 package models;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,7 +9,9 @@ import java.util.List;
  * This class encapsulates user information, including username, password (hashed),
  * budget, and transactions.
  */
-public class User {
+public class User implements Serializable {
+    private static final long serialVersionUID = 1L; // Recommended for Serializable classes
+
     // The user's unique username
     private final String username;
     
@@ -31,6 +34,19 @@ public class User {
     public User(String username, String password) {
         this.username = username;
         this.passwordHash = hashPassword(password);
+        this.transactions = new ArrayList<>();
+    }
+
+    /**
+     * Constructs a new User with the specified username and budget.
+     *
+     * @param username The user's username
+     * @param budget The user's budget
+     */
+    public User(String username, Budget budget) {
+        this.username = username;
+        this.passwordHash = ""; // No password is provided in this constructor
+        this.budget = budget;
         this.transactions = new ArrayList<>();
     }
 
@@ -97,9 +113,7 @@ public class User {
      * @return A hashed version of the password
      */
     private String hashPassword(String password) {
-        
-        // For example, you could use BCrypt or another secure hashing method
-        // This is a placeholder and should be replaced with actual secure hashing
+        // This is a placeholder and should be replaced with an actual secure hashing method
         return password + "hashed";
     }
 
