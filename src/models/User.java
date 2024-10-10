@@ -1,159 +1,105 @@
 package models;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import java.math.BigDecimal;
+import java.util.UUID;
 
 /**
- * Represents a user in the Personal Finance Management System.
- * This class encapsulates user information, including username, password (hashed),
- * budget, and transactions.
+ * Class representing a User in the system.
  */
-public class User implements Serializable {
-    private static final long serialVersionUID = 1L; // Recommended for Serializable classes
-
-    // The user's unique username
-    private final String username;
-    
-    // The hashed password for the user
-    private final String passwordHash;
-    
-    // The user's budget
-    private Budget budget;
-    
-    // List of the user's transactions
-    private final List<Transaction> transactions;
+public class User {
+    private final String userId; // Declared as final
+    private String username;
+    private String password; // Consider using hashed passwords in real applications
+    private String email;
+    private BigDecimal budgetGoals; // Added attribute for budget goals
 
     /**
-     * Constructs a new User with the specified username and password.
-     * The password is hashed before storage for security.
+     * Constructor for User.
      *
-     * @param username The user's username
-     * @param password The user's password (will be hashed)
+     * @param username     The username of the user.
+     * @param password     The password of the user.
+     * @param email        The email address of the user.
+     * @param budgetGoals  The budget goals for the user.
      */
-    public User(String username, String password) {
+    public User(String username, String password, String email, BigDecimal budgetGoals) {
+        this.userId = UUID.randomUUID().toString(); // Generates a unique ID
         this.username = username;
-        this.passwordHash = hashPassword(password);
-        this.transactions = new ArrayList<>();
+        this.password = password;
+        this.email = email;
+        this.budgetGoals = budgetGoals;
     }
 
-    /**
-     * Constructs a new User with the specified username and budget.
-     *
-     * @param username The user's username
-     * @param budget The user's budget
-     */
-    public User(String username, Budget budget) {
-        this.username = username;
-        this.passwordHash = ""; // No password is provided in this constructor
-        this.budget = budget;
-        this.transactions = new ArrayList<>();
+    // Getters and Setters
+
+    public String getUserId() {
+        return userId;
     }
 
-    /**
-     * Gets the user's username.
-     *
-     * @return The username
-     */
+    // No setter for userId as it's generated automatically and final
+
     public String getUsername() {
         return username;
     }
 
-    /**
-     * Gets the user's budget.
-     *
-     * @return The user's Budget object
-     */
-    public Budget getBudget() {
-        return this.budget;
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
     }
 
     /**
-     * Sets the user's budget.
+     * Sets the user's password.
      *
-     * @param budget The Budget object to set
+     * @param password The new password.
      */
-    public void setBudget(Budget budget) {
-        this.budget = budget;
+    public void setPassword(String password) {
+        this.password = password; // In real applications, hash the password before setting
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     /**
-     * Adds a new transaction to the user's list of transactions.
+     * Gets the budget goals of the user.
      *
-     * @param transaction The Transaction object to add
+     * @return The budget goals as BigDecimal.
      */
-    public void addTransaction(Transaction transaction) {
-        this.transactions.add(transaction);
+    public BigDecimal getBudgetGoals() {
+        return budgetGoals;
     }
 
     /**
-     * Gets the list of user's transactions.
+     * Sets the budget goals of the user.
      *
-     * @return A List of Transaction objects
+     * @param budgetGoals The new budget goals.
      */
-    public List<Transaction> getTransactions() {
-        return this.transactions;
+    public void setBudgetGoals(BigDecimal budgetGoals) {
+        if (budgetGoals != null && budgetGoals.compareTo(BigDecimal.ZERO) >= 0) {
+            this.budgetGoals = budgetGoals;
+        } else {
+            throw new IllegalArgumentException("Budget goals must be a non-negative value.");
+        }
     }
 
     /**
-     * Checks if the provided password matches the user's password.
+     * Overrides the default toString method to provide a string representation of the User.
      *
-     * @param password The password to check
-     * @return true if the password matches, false otherwise
-     */
-    public boolean checkPassword(String password) {
-        return hashPassword(password).equals(this.passwordHash);
-    }
-
-    /**
-     * Hashes the provided password for secure storage.
-     * Note: This is a placeholder method and should be replaced with a secure hashing algorithm.
-     *
-     * @param password The password to hash
-     * @return A hashed version of the password
-     */
-    private String hashPassword(String password) {
-        // This is a placeholder and should be replaced with an actual secure hashing method
-        return password + "hashed";
-    }
-
-    /**
-     * Provides a string representation of the User.
-     * Note: This method does not include sensitive information like the password hash.
-     *
-     * @return A string representation of the User
+     * @return A string representation of the User.
      */
     @Override
     public String toString() {
         return "User{" +
-               "username='" + username + '\'' +
-               ", budget=" + budget +
-               ", transactionCount=" + transactions.size() +
-               '}';
-    }
-
-    /**
-     * Checks if this User is equal to another object.
-     * Users are considered equal if they have the same username.
-     *
-     * @param obj The object to compare with
-     * @return true if the objects are equal, false otherwise
-     */
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        User user = (User) obj;
-        return username.equals(user.username);
-    }
-
-    /**
-     * Generates a hash code for this User.
-     *
-     * @return A hash code value for this object
-     */
-    @Override
-    public int hashCode() {
-        return username.hashCode();
+                "userId='" + userId + '\'' +
+                ", username='" + username + '\'' +
+                ", email='" + email + '\'' +
+                ", budgetGoals=" + budgetGoals +
+                '}';
     }
 }

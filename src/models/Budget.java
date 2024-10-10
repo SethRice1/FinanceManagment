@@ -1,93 +1,214 @@
 package models;
 
-import java.io.Serializable;
+import java.math.BigDecimal;
 
-/**
- * Represents the budget of a user.
- */
-public class Budget implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class Budget extends FinancialEntity {
+    private double totalBudget;
+    private double totalExpenses;
+    private boolean isBudgetExceeded;
+    private double[] monthlyBudgets;
+    private double[] monthlyIncome;
+    private double[] monthlyExpenses;
 
-    private double limit; // Total budget limit
-    private double totalSpent; // Total amount spent so far
+    // Static field for maximum allowed budget limit
+    private static final double MAX_BUDGET_LIMIT = 1_000_000.00;
 
-    /**
-     * Constructs a new Budget with a specified limit.
-     *
-     * @param limit The initial budget limit
-     */
-    public Budget(double limit) {
-        this.limit = limit;
-        this.totalSpent = 0.0;
-    }
-
-    /**
-     * Updates the budget limit.
-     *
-     * @param newLimit The new budget limit
-     */
-    public void updateBudget(double newLimit) {
-        this.limit = newLimit;
-    }
-
-    /**
-     * Gets the current budget limit.
-     *
-     * @return The budget limit
-     */
-    public double getLimit() {
-        return limit;
-    }
-
-    /**
-     * Adds an amount to the total spent.
-     *
-     * @param amount The amount to be added to the total spent
-     */
-    public void addSpent(double amount) {
-        this.totalSpent += amount;
-    }
-
-    /**
-     * Calculates the remaining budget.
-     *
-     * @return The remaining budget amount
-     */
-    public double calculateRemainingBudget() {
-        return limit - totalSpent;
-    }
-
-    /**
-     * Generates a budget alert message based on a specified threshold percentage.
-     *
-     * @param threshold The threshold percentage for the budget alert
-     * @return A warning message if the budget is low, otherwise an empty string
-     */
-    public String generateBudgetAlert(double threshold) {
-        double remaining = calculateRemainingBudget();
-        if (remaining < (limit * threshold / 100)) {
-            return "Warning: Your remaining budget is below " + threshold + "% of the limit.";
+    public Budget(String budgetId, String name, double totalBudget) {
+        super(budgetId, name);
+        if (totalBudget > 0) {
+            if (totalBudget <= MAX_BUDGET_LIMIT) {
+                this.totalBudget = totalBudget;
+                this.totalExpenses = 0;
+                this.isBudgetExceeded = false;
+                this.monthlyBudgets = new double[12];
+                this.monthlyIncome = new double[12];
+                this.monthlyExpenses = new double[12];
+            } else {
+                throw new IllegalArgumentException("Total budget cannot exceed " + MAX_BUDGET_LIMIT);
+            }
+        } else {
+            throw new IllegalArgumentException("Total budget must be greater than zero.");
         }
-        return "";
     }
 
-    /**
-     * Checks if the remaining budget is near the given threshold percentage.
-     *
-     * @param thresholdPercentage The threshold percentage
-     * @return true if the remaining budget is below the threshold, false otherwise
-     */
-    public boolean isNearLimit(double thresholdPercentage) {
-        double remaining = calculateRemainingBudget();
-        return (remaining / limit) < (thresholdPercentage / 100);
+    // New Constructor to match MainGUI usage
+    public Budget(String budgetId, String name) {
+        this(budgetId, name, 0.0);
     }
 
+    // Getters and Setters
+    public double getTotalBudget() {
+        return totalBudget;
+    }
+
+    public void setTotalBudget(double totalBudget) {
+        if (totalBudget > 0) {
+            if (totalBudget <= MAX_BUDGET_LIMIT) {
+                this.totalBudget = totalBudget;
+            } else {
+                System.out.println("Total budget cannot exceed " + MAX_BUDGET_LIMIT);
+            }
+        } else {
+            System.out.println("Total budget must be greater than zero.");
+        }
+    }
+
+    public double getTotalExpenses() {
+        return totalExpenses;
+    }
+
+    public void setTotalExpenses(double totalExpenses) {
+        if (totalExpenses >= 0) {
+            this.totalExpenses = totalExpenses;
+        } else {
+            System.out.println("Total expenses cannot be negative.");
+        }
+    }
+
+    public boolean isBudgetExceeded() {
+        return isBudgetExceeded;
+    }
+
+    // Overloaded method to add income without specifying month (applies to total budget)
+    public void addIncome(String description, BigDecimal amount) {
+        if (amount.compareTo(BigDecimal.ZERO) > 0) {
+            this.totalBudget += amount.doubleValue();
+        } else {
+            System.out.println("Income amount must be positive.");
+        }
+    }
+
+    // Overloaded method to add an expense without specifying month (applies to total expenses)
+    public void addExpense(String description, BigDecimal amount) {
+        if (amount.compareTo(BigDecimal.ZERO) > 0) {
+            this.totalExpenses += amount.doubleValue();
+            if (totalExpenses > totalBudget) {
+                isBudgetExceeded = true;
+                System.out.println("Warning: Budget exceeded by " + (totalExpenses - totalBudget));
+            }
+        } else {
+            System.out.println("Expense amount must be positive.");
+        }
+    }
+
+    // Method to add income to a specific month
+    public void addIncome(int month, String description, BigDecimal amount) {
+        if (month >= 1 && month <= 12) {
+            if (amount.compareTo(BigDecimal.ZERO) > 0) {
+                this.monthlyIncome[month - 1] += amount.doubleValue();
+                this.totalBudget += amount.doubleValue();
+            } else {
+                System.out.println("Income amount must be positive.");
+            }
+        } else {
+            System.out.println("Invalid month. Must be between 1 and 12.");
+        }
+    }
+
+    // Method to add an expense to a specific month
+    public void addExpense(int month, String description, BigDecimal amount) {
+        if (month >= 1 && month <= 12) {
+            if (amount.compareTo(BigDecimal.ZERO) > 0) {
+                this.monthlyExpenses[month - 1] += amount.doubleValue();
+                this.totalExpenses += amount.doubleValue();
+                if (totalExpenses > totalBudget) {
+                    isBudgetExceeded = true;
+                    System.out.println("Warning: Budget exceeded by " + (totalExpenses - totalBudget));
+                }
+            } else {
+                System.out.println("Expense amount must be positive.");
+            }
+        } else {
+            System.out.println("Invalid month. Must be between 1 and 12.");
+        }
+    }
+
+    // Method to get the remaining budget
+    public double getRemainingBudget() {
+        if (totalBudget >= totalExpenses) {
+            return totalBudget - totalExpenses;
+        } else {
+            System.out.println("Expenses exceed the total budget.");
+            return 0;
+        }
+    }
+
+    // Method to reset the budget using a while loop
+    public void resetBudget(double newBudget) {
+        if (newBudget > 0) {
+            if (newBudget <= MAX_BUDGET_LIMIT) {
+                while (totalExpenses > 0) {
+                    totalExpenses -= 1;
+                }
+                this.totalBudget = newBudget;
+                this.totalExpenses = 0;
+                this.isBudgetExceeded = false;
+                System.out.println("Budget has been reset to: " + newBudget);
+            } else {
+                System.out.println("New budget cannot exceed " + MAX_BUDGET_LIMIT);
+            }
+        } else {
+            System.out.println("New budget must be greater than zero.");
+        }
+    }
+
+    // Method to set monthly budget for a specific month
+    public void setMonthlyBudget(int month, double amount) {
+        if (month >= 1 && month <= 12) {
+            if (amount > 0 && amount <= MAX_BUDGET_LIMIT) {
+                monthlyBudgets[month - 1] = amount;
+            } else {
+                System.out.println("Invalid budget amount. Must be positive and within limit.");
+            }
+        } else {
+            System.out.println("Invalid month. Must be between 1 and 12.");
+        }
+    }
+
+    // Method to get monthly budget for a specific month
+    public double getMonthlyBudget(int month) {
+        if (month >= 1 && month <= 12) {
+            return monthlyBudgets[month - 1];
+        } else {
+            System.out.println("Invalid month. Must be between 1 and 12.");
+            return 0;
+        }
+    }
+
+    // Method to get all monthly budgets
+    public double[] getMonthlyBudgets() {
+        return monthlyBudgets;
+    }
+
+    // Method to get all monthly expenses
+    public double[] getMonthlyExpenses() {
+        return monthlyExpenses;
+    }
+
+    // Method to print all monthly budgets, income, expenses, and balances
+    public void printMonthlyBudgets() {
+        System.out.println("Month           Income          Expenses        Balance");
+        System.out.println("---------------------------------------------------------------");
+        for (int i = 0; i < 12; i++) {
+            double balance = monthlyIncome[i] - monthlyExpenses[i];
+            System.out.printf("%-15s $%-14.2f $%-14.2f $%-14.2f%n", getMonthName(i + 1), monthlyIncome[i], monthlyExpenses[i], balance);
+        }
+    }
+
+    // Helper method to get month name
+    private String getMonthName(int month) {
+        String[] months = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+        return months[month - 1];
+    }
+
+    // Static method to get the maximum allowed budget limit
+    public static double getMaxBudgetLimit() {
+        return MAX_BUDGET_LIMIT;
+    }
+
+    // Implementation of abstract method to calculate balance
     @Override
-    public String toString() {
-        return "Budget{" +
-               "limit=" + limit +
-               ", totalSpent=" + totalSpent +
-               ", remainingBudget=" + calculateRemainingBudget() +
-               '}';
+    public BigDecimal calculateBalance() {
+        return BigDecimal.valueOf(totalBudget - totalExpenses);
     }
 }

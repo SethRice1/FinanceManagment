@@ -1,89 +1,83 @@
 package models;
 
-import java.io.Serializable;
+import java.math.BigDecimal;
+import java.util.UUID;
 
 /**
- * Represents a financial transaction in the Personal Finance Management System.
+ * Class representing a financial transaction.
  */
-public class Transaction implements Serializable {
-    private static final long serialVersionUID = 1L;
-
-    private final double amount;  // Set as final since it's not modified after initialization
-    private final TransactionType type;  // Set as final
-    private final String category;  // Set as final
-    private final String description;  // Set as final
-    private final String date;  // Set as final
+public class Transaction {
+    private String entityId;
+    private String description;
+    private BigDecimal amount;
+    private String category;
 
     /**
-     * Constructs a new Transaction.
+     * Constructor for Transaction.
      *
-     * @param amount The transaction amount
-     * @param type The type of transaction (e.g., INCOME, EXPENSE)
-     * @param category The category of the transaction
-     * @param description A brief description of the transaction
-     * @param date The date of the transaction
+     * @param description Description of the transaction.
+     * @param amount      Amount of the transaction.
+     * @param category    Category of the transaction.
      */
-    public Transaction(double amount, TransactionType type, String category, String description, String date) {
-        this.amount = amount;
-        this.type = type;
-        this.category = category;
+    public Transaction(String description, BigDecimal amount, String category) {
+        this.entityId = UUID.randomUUID().toString(); // Generates a unique ID
         this.description = description;
-        this.date = date;
+        this.amount = amount;
+        this.category = category;
     }
 
-    /**
-     * Gets the transaction amount.
-     *
-     * @return The transaction amount
-     */
-    public double getAmount() {
-        return amount;
+    // Getters and Setters
+
+    public String getEntityId() {
+        return entityId;
     }
 
-    /**
-     * Gets the transaction type.
-     *
-     * @return The transaction type
-     */
-    public TransactionType getType() {
-        return type;
-    }
+    // No setter for entityId as it's generated automatically
 
-    /**
-     * Gets the category of the transaction.
-     *
-     * @return The category of the transaction
-     */
-    public String getCategory() {
-        return category;
-    }
-
-    /**
-     * Gets the description of the transaction.
-     *
-     * @return The description of the transaction
-     */
     public String getDescription() {
         return description;
     }
 
-    /**
-     * Gets the date of the transaction.
-     *
-     * @return The date of the transaction
-     */
-    public String getDate() {
-        return date;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        if (amount != null) {
+            this.amount = amount;
+        } else {
+            throw new IllegalArgumentException("Amount cannot be null.");
+        }
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        if (category != null && !category.isEmpty()) {
+            this.category = category;
+        } else {
+            throw new IllegalArgumentException("Category cannot be null or empty.");
+        }
+    }
+
+    /**
+     * Overrides the default toString method to provide a string representation of the Transaction.
+     *
+     * @return A string representation of the Transaction.
+     */
     @Override
     public String toString() {
         return "Transaction{" +
-               "amount=" + amount +
-               ", type=" + type +
-               ", category='" + category + '\'' +
-               ", description='" + description + '\'' +
-               ", date='" + date + '\'' +
-               '}';
+                "entityId='" + entityId + '\'' +
+                ", description='" + description + '\'' +
+                ", amount=" + amount +
+                ", category='" + category + '\'' +
+                '}';
     }
 }

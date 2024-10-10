@@ -1,158 +1,235 @@
 package gui;
 
 import java.awt.*;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.awt.event.ActionListener;
+import java.math.BigDecimal;
 import javax.swing.*;
 import models.Budget;
-import models.Transaction;
-import models.User;
-import services.FileManager;
-import services.TransactionService;
 
-/**
- * MainGUI class provides the graphical user interface for the Personal Finance Management System.
- * It includes components for managing budgets, transactions, and file operations.
- */
 public class MainGUI extends JFrame {
-    private User user;
-    private final TransactionService transactionService;
-    private final JTextArea outputArea;
-    private final JTextField budgetLimitField, thresholdField;
+    // Labels, fields, and buttons for the UI
+    private final JLabel incomeLabel;
+    private final JTextField incomeField;
+    private final JButton addIncomeButton;
+    private final JLabel expenseLabel;
+    private final JTextField expenseField;
+    private final JButton addExpenseButton;
+    private final JLabel balanceLabel;
+    private final JTextArea budgetDisplayArea;
+    private final JComboBox<String> monthComboBox;
 
-    /**
-     * Constructor for MainGUI.
-     * Initializes the GUI components.
-     *
-     * @param user The user for whom the GUI is being created
-     * @param transactionService The transaction service for managing transactions
-     */
-    public MainGUI(User user, TransactionService transactionService) {
-        this.user = user;
-        this.transactionService = transactionService;
+    // Instance of Budget class to manage personal finance data
+    private final Budget budget;
+
+    public MainGUI(Budget budget) {
+        // Initialize Budget with the provided instance
+        this.budget = budget;
 
         setTitle("Personal Finance Management System");
-        setSize(600, 400);
+        setSize(500, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // Output area for displaying information
-        outputArea = new JTextArea(10, 50);
-        outputArea.setEditable(false);
-        JScrollPane scrollPane = new JScrollPane(outputArea);
-        add(scrollPane, BorderLayout.CENTER);
+        // Top Panel for Inputs
+        JPanel inputPanel = new JPanel();
+        inputPanel.setLayout(new GridBagLayout()); // GridBagLayout for more flexibility in aligning components
+        inputPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Padding around the panel
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Control panel
-        JPanel controlPanel = new JPanel();
-        controlPanel.setLayout(new GridLayout(3, 2, 10, 10));
+        // Month Selection
+        JLabel monthLabel = new JLabel("Select Month:");
+        monthComboBox = new JComboBox<>(getMonths()); // ComboBox to select month
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        inputPanel.add(monthLabel, gbc);
+        gbc.gridx = 1;
+        inputPanel.add(monthComboBox, gbc);
 
-        // Input fields for budget management
-        controlPanel.add(new JLabel("Update Budget Limit:"));
-        budgetLimitField = new JTextField();
-        controlPanel.add(budgetLimitField);
+        // Income Section
+        incomeLabel = new JLabel("Enter Income:");
+        incomeField = new JTextField();
+        addIncomeButton = new JButton("Add Income");
 
-        JButton updateBudgetButton = new JButton("Update Budget");
-        updateBudgetButton.addActionListener(e -> updateBudget());
-        controlPanel.add(updateBudgetButton);
+        // Action listener to handle income addition
+        addIncomeButton.addActionListener(new AddIncomeActionListener());
 
-        controlPanel.add(new JLabel("Set Threshold Alert (%):"));
-        thresholdField = new JTextField();
-        controlPanel.add(thresholdField);
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        inputPanel.add(incomeLabel, gbc);
+        gbc.gridx = 1;
+        inputPanel.add(incomeField, gbc);
+        gbc.gridx = 1;
+        gbc.gridy = 2;
+        inputPanel.add(addIncomeButton, gbc);
 
-        JButton setAlertButton = new JButton("Set Alert");
-        setAlertButton.addActionListener(e -> setThresholdAlert());
-        controlPanel.add(setAlertButton);
+        // Expense Section
+        expenseLabel = new JLabel("Enter Expense:");
+        expenseField = new JTextField();
+        addExpenseButton = new JButton("Add Expense");
 
-        add(controlPanel, BorderLayout.NORTH);
+        // Action listener to handle expense addition
+        addExpenseButton.addActionListener(e -> addExpense());
 
-        // Buttons for saving and loading data
-        JPanel dataPanel = new JPanel();
-        dataPanel.setLayout(new GridLayout(1, 2, 10, 10));
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        inputPanel.add(expenseLabel, gbc);
+        gbc.gridx = 1;
+        inputPanel.add(expenseField, gbc);
+        gbc.gridx = 1;
+        gbc.gridy = 4;
+        inputPanel.add(addExpenseButton, gbc);
 
-        JButton saveDataButton = new JButton("Save All Data");
-        saveDataButton.addActionListener(e -> saveAllData());
-        dataPanel.add(saveDataButton);
+        // Balance Display
+        balanceLabel = new JLabel("Total Balance: $0.00");
+        balanceLabel.setFont(new Font("Arial", Font.BOLD, 16)); // Set font for emphasis
+        gbc.gridx = 0;
+        gbc.gridy = 5;
+        gbc.gridwidth = 2;
+        inputPanel.add(balanceLabel, gbc);
 
-        JButton loadDataButton = new JButton("Load All Data");
-        loadDataButton.addActionListener(e -> loadAllData());
-        dataPanel.add(loadDataButton);
+        add(inputPanel, BorderLayout.NORTH); // Add input panel to the top of the frame
 
-        add(dataPanel, BorderLayout.SOUTH);
+        // Center Panel for Budget Display
+        budgetDisplayArea = new JTextArea();
+        budgetDisplayArea.setEditable(false); // Make the text area read-only
+        JScrollPane scrollPane = new JScrollPane(budgetDisplayArea);
+        scrollPane.setBorder(BorderFactory.createTitledBorder("Budget Details")); // Border with title
+        add(scrollPane, BorderLayout.CENTER); // Add scroll pane to the center of the frame
+
+        // Initialize Budget Display
+        updateBudgetDisplay();
     }
 
     /**
-     * Updates the budget limit based on user input.
+     * ActionListener for adding income.
      */
-    private void updateBudget() {
-        try {
-            double newLimit = Double.parseDouble(budgetLimitField.getText());
-            user.getBudget().updateBudget(newLimit);
-            outputArea.setText("Budget limit updated to: " + newLimit);
-        } catch (NumberFormatException e) {
-            outputArea.setText("Invalid budget limit value.");
+    private class AddIncomeActionListener implements ActionListener {
+        @Override
+        public void actionPerformed(java.awt.event.ActionEvent e) {
+            addIncome();
         }
     }
 
     /**
-     * Sets a threshold alert for the budget.
+     * Adds income to the selected month in the Budget.
      */
-    private void setThresholdAlert() {
+    private void addIncome() {
+        String incomeText = incomeField.getText().trim(); // Get the income value from the input field
+        String selectedMonth = (String) monthComboBox.getSelectedItem(); // Get the selected month from the ComboBox
+
+        if (selectedMonth == null || selectedMonth.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please select a month.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         try {
-            double threshold = Double.parseDouble(thresholdField.getText());
-            String alertMessage = user.getBudget().generateBudgetAlert(threshold);
-            outputArea.setText(alertMessage.isEmpty() ? "Threshold set successfully." : alertMessage);
-        } catch (NumberFormatException e) {
-            outputArea.setText("Invalid threshold value.");
+            BigDecimal income = new BigDecimal(incomeText); // Convert the income input to BigDecimal
+            if (income.compareTo(BigDecimal.ZERO) < 0) {
+                throw new NumberFormatException("Negative income not allowed.");
+            }
+            int monthIndex = monthComboBox.getSelectedIndex() + 1; // Get the month index (1-based)
+            budget.addIncome(monthIndex, selectedMonth, income); // Add income to the budget for the selected month
+            JOptionPane.showMessageDialog(this, "Income added: $" + income, "Success", JOptionPane.INFORMATION_MESSAGE);
+            incomeField.setText(""); // Clear the income field after adding
+            updateBudgetDisplay(); // Update the budget display area
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Please enter a valid positive number for income.", "Invalid Input", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     /**
-     * Saves all data (user, budget, transactions) to separate files.
+     * Adds expense to the selected month in the Budget.
      */
-    private void saveAllData() {
+    private void addExpense() {
+        String expenseText = expenseField.getText().trim(); // Get the expense value from the input field
+        String selectedMonth = (String) monthComboBox.getSelectedItem(); // Get the selected month from the ComboBox
+
+        if (selectedMonth == null || selectedMonth.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please select a month.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         try {
-            FileManager.saveUserData(user);
-            FileManager.saveBudgetData(user.getBudget());
-            Map<User, List<Transaction>> transactionsMap = new HashMap<>();
-            transactionsMap.put(user, transactionService.getUserTransactions(user));
-            FileManager.saveTransactionData(transactionsMap);
-            outputArea.setText("Data saved successfully.");
-        } catch (IOException e) {
-            outputArea.setText("Error saving data: " + e.getMessage());
+            BigDecimal expense = new BigDecimal(expenseText); // Convert the expense input to BigDecimal
+            if (expense.compareTo(BigDecimal.ZERO) < 0) {
+                throw new NumberFormatException("Negative expense not allowed.");
+            }
+            int monthIndex = monthComboBox.getSelectedIndex() + 1; // Get the month index (1-based)
+            budget.addExpense(monthIndex, selectedMonth, expense); // Add expense to the budget for the selected month
+            JOptionPane.showMessageDialog(this, "Expense added: $" + expense, "Success", JOptionPane.INFORMATION_MESSAGE);
+            expenseField.setText(""); // Clear the expense field after adding
+            updateBudgetDisplay(); // Update the budget display area
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Please enter a valid positive number for expense.", "Invalid Input", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     /**
-     * Loads all data (user, budget, transactions) from separate files.
+     * Updates the budget display area and balance label.
+     * Displays the budget summary for each month, including income, expenses, and balance.
      */
-    private void loadAllData() {
-        try {
-            user = FileManager.loadUserData();
-            user.setBudget(FileManager.loadBudgetData());
-            Map<User, List<Transaction>> transactionsMap = FileManager.loadTransactionData();
-            List<Transaction> transactions = transactionsMap.get(user);
-            transactionService.loadTransactions(user, transactions);
-            outputArea.setText("Data loaded successfully.");
-        } catch (IOException | ClassNotFoundException e) {
-            outputArea.setText("Error loading data: " + e.getMessage());
+    private void updateBudgetDisplay() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Budget Name: ").append(budget.getName()).append("\n");
+        sb.append("Entity ID: ").append(budget.getEntityId()).append("\n\n");
+
+        sb.append(String.format("%-15s %-15s %-15s %-15s%n", "Month", "Income", "Expenses", "Balance"));
+        sb.append("---------------------------------------------------------------\n");
+
+        double[] monthlyBudgets = budget.getMonthlyBudgets();
+        double[] monthlyExpenses = budget.getMonthlyExpenses();
+        for (int i = 0; i < monthlyBudgets.length; i++) {
+            String month = getMonths()[i];
+            double income = monthlyBudgets[i]; // Get income for the month
+            double expenses = monthlyExpenses[i]; // Get expenses for the month
+            double balance = calculateMonthlyBalance(income, expenses); // Calculate balance using dedicated method
+            sb.append(String.format("%-15s $%-14.2f $%-14.2f $%-14.2f%n", month, income, expenses, balance));
         }
+
+        budgetDisplayArea.setText(sb.toString()); // Set the text in the display area
+        balanceLabel.setText("Total Balance: $" + calculateTotalBalance()); // Update the balance label
     }
 
     /**
-     * Main method to run the GUI.
+     * Calculates the balance for a given income and expenses.
      *
-     * @param args Command line arguments
+     * @param income   The total income for the month.
+     * @param expenses The total expenses for the month.
+     * @return The balance for the month.
      */
-    public static void main(String[] args) {
-        // Sample user and budget setup
-        Budget budget = new Budget(1000);
-        User user = new User("username", budget);
-        TransactionService transactionService = new TransactionService();
+    private double calculateMonthlyBalance(double income, double expenses) {
+        return income - expenses;
+    }
 
-        // Launch the GUI
-        MainGUI gui = new MainGUI(user, transactionService);
-        gui.setVisible(true);
+    /**
+     * Calculates the total balance across all months in the budget.
+     *
+     * @return The total balance.
+     */
+    private double calculateTotalBalance() {
+        return budget.calculateBalance().doubleValue();
+    }
+
+    /**
+     * Returns an array of month names.
+     *
+     * @return Array of month names.
+     */
+    private String[] getMonths() {
+        return new String[]{
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+        };
+    }
+
+    public static void main(String[] args) {
+        // Create and show the GUI in the event dispatch thread for thread safety
+        SwingUtilities.invokeLater(() -> {
+            Budget budget = new Budget("B001", "Personal Budget", 1000.0); // Pass budget instance dynamically
+            MainGUI gui = new MainGUI(budget);
+            gui.setVisible(true);
+        });
     }
 }
