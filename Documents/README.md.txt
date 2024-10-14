@@ -101,7 +101,7 @@ java gui.MainGUI
 
 ## Screenshots
 Include screenshots showing the login screen, dashboard, budget overview, and transaction history. Place these screenshots after this section to help users visually locate each part of the application. Example screenshots can be found in the 'docs/screenshots' folder or through links provided in the repository's README. Use consistent file formats such as PNG or JPEG for better quality and uniformity. The recommended resolution for screenshots is at least 1280x720 to ensure they are clear and readable on all devices, including higher-resolution displays.
-
+ 
 ## Objectives and Purpose
 The **Personal Finance Management System** is intended to help users:
 - Gain control over their finances.

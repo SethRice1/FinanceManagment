@@ -1,3 +1,10 @@
+/*
+ * File: Utility.java
+ * Description: Utility class with helper methods for the application.
+ * Author: Seth (R0ice_1)
+ * Version: 1.0
+ * Date: October 13, 2024
+ */
 package utils;
 
 /**

@@ -1,3 +1,10 @@
+/*
+ * File: UserTransaction.java
+ * Description: Handles transactions related to users.
+ * Author: Seth (R0ice_1)
+ * Version: 1.0
+ * Date: October 13, 2024
+ */
 package services;
 
 import exceptions.InvalidInputException;

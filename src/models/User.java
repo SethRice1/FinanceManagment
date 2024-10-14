@@ -1,3 +1,10 @@
+/*
+ * File: User.java
+ * Description: Represents a user within the application.
+ * Author: Seth (R0ice_1)
+ * Version: 1.0
+ * Date: October 13, 2024
+ */
 package models;
 
 import java.io.Serializable;

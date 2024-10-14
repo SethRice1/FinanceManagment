@@ -1,3 +1,10 @@
+/*
+ * File: FileManager.java
+ * Description: Handles file operations for storing and retrieving data.
+ * Author: Seth (R0ice_1)
+ * Version: 1.0
+ * Date: October 13, 2024
+ */
 package services;
 
 import java.io.*;

@@ -1,3 +1,10 @@
+/*
+ * File: MainGUI.java
+ * Description: Main graphical user interface for the application.
+ * Author: Seth (R0ice_1)
+ * Version: 1.0
+ * Date: October 13, 2024
+ */
 package gui;
 
 import exceptions.BudgetExceededException;
@@ -381,7 +388,7 @@ public class MainGUI extends JFrame {
      * Displays the About dialog.
      */
     private void showAboutDialog() {
-        JOptionPane.showMessageDialog(this, "Personal Finance Management System\nVersion 1.0\nDeveloped by Your Name", "About", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(this, "Personal Finance Management System\nVersion 1.0\nDeveloped by Seth AKA R0ice_1", "About", JOptionPane.INFORMATION_MESSAGE);
     }
 
     /**

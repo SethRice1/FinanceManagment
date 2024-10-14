@@ -1,3 +1,10 @@
+/*
+ * File: Transaction.java
+ * Description: Represents a financial transaction.
+ * Author: Seth (R0ice_1)
+ * Version: 1.0
+ * Date: October 13, 2024
+ */
 package models;
 
 import java.math.BigDecimal;

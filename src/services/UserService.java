@@ -1,3 +1,11 @@
+/*
+ * File: UserService.java
+ * Description: Provides services related to user management.
+ * Author: Seth (R0ice_1)
+ * Version: 1.0
+ * Date: October 13, 2024
+ */
+
 package services;
 
 import exceptions.InvalidInputException;
