@@ -1,176 +1,124 @@
 package services;
 
+import exceptions.InvalidInputException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import models.Transaction;
+import models.TransactionType;
 import models.User;
 
 /**
  * Manages user transactions and related operations.
  */
 public class UserTransaction {
-    private User user;
-    private List<Transaction> transactions;
-    private String[] transactionCategories;
+    private static final Logger LOGGER = Logger.getLogger(UserTransaction.class.getName());
+    private final UserService userService;
 
     /**
      * Constructor for UserTransaction.
      *
-     * @param user The user associated with these transactions.
+     * @param userService The UserService instance to interact with user data.
      */
-    public UserTransaction(User user) {
-        this.user = user;
-        this.transactions = new ArrayList<>();
-        this.transactionCategories = new String[] {"Groceries", "Rent", "Utilities", "Entertainment", "Miscellaneous"};
-    }
-
-    // Getters and Setters
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        if (user != null) {
-            this.user = user;
-        } else {
-            throw new IllegalArgumentException("User cannot be null.");
+    public UserTransaction(UserService userService) {
+        if (userService == null) {
+            throw new IllegalArgumentException("UserService cannot be null.");
         }
-    }
-
-    public List<Transaction> getTransactions() {
-        return transactions;
-    }
-
-    public void setTransactions(List<Transaction> transactions) {
-        if (transactions != null) {
-            this.transactions = transactions;
-        } else {
-            throw new IllegalArgumentException("Transactions list cannot be null.");
-        }
-    }
-
-    public String[] getTransactionCategories() {
-        return transactionCategories.clone();
-    }
-
-    public void setTransactionCategories(String[] transactionCategories) {
-        if (transactionCategories != null && transactionCategories.length > 0) {
-            this.transactionCategories = transactionCategories.clone();
-        } else {
-            throw new IllegalArgumentException("Transaction categories cannot be null or empty.");
-        }
+        this.userService = userService;
     }
 
     /**
-     * Adds a transaction to the user's transaction list.
+     * Calculates the total expenses for a user.
      *
-     * @param transaction The transaction to be added.
-     */
-    public void addTransaction(Transaction transaction) {
-        if (transaction != null) {
-            if (transaction.getAmount().compareTo(BigDecimal.ZERO) > 0) {
-                transactions.add(transaction);
-            } else {
-                throw new IllegalArgumentException("Transaction amount must be positive.");
-            }
-        } else {
-            throw new IllegalArgumentException("Transaction cannot be null.");
-        }
-    }
-
-    /**
-     * Calculates the total expenses (negative transactions) using a for loop.
-     *
+     * @param username The username of the user.
      * @return The total expenses as BigDecimal.
+     * @throws InvalidInputException if the user does not exist.
      */
-    public BigDecimal getTotalExpenses() {
-        BigDecimal total = BigDecimal.ZERO;
-        for (Transaction transaction : transactions) {
-            if (transaction != null) {
-                if (transaction.getAmount().compareTo(BigDecimal.ZERO) < 0) {
-                    total = total.add(transaction.getAmount());
-                }
-            }
+    public BigDecimal getTotalExpenses(String username) throws InvalidInputException {
+        User user = userService.getUser(username);
+        if (user == null) {
+            LOGGER.log(Level.WARNING, "User {0} does not exist.", username);
+            throw new InvalidInputException("User does not exist.");
         }
-        return total.setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal totalExpenses = user.getTransactions().stream()
+                .filter(t -> t.getType() == TransactionType.EXPENSE)
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        LOGGER.log(Level.INFO, "Total expenses for user {0}: {1}", new Object[]{username, totalExpenses});
+        return totalExpenses;
     }
 
     /**
-     * Counts the number of transactions in a specific category using a for loop.
+     * Counts the number of transactions in a specific category for a user.
      *
+     * @param username The username of the user.
      * @param category The category to count transactions for.
      * @return The count of transactions in the specified category.
+     * @throws InvalidInputException if the user does not exist.
      */
-    public int countTransactionsByCategory(String category) {
-        int count = 0;
-        if (category != null && !category.isEmpty()) {
-            for (Transaction transaction : transactions) {
-                if (transaction != null) {
-                    if (transaction.getCategory().equalsIgnoreCase(category)) {
-                        count++;
-                    }
-                }
-            }
-        } else {
+    public int countTransactionsByCategory(String username, String category) throws InvalidInputException {
+        if (category == null || category.isEmpty()) {
             throw new IllegalArgumentException("Category cannot be null or empty.");
         }
+
+        User user = userService.getUser(username);
+        if (user == null) {
+            LOGGER.log(Level.WARNING, "User {0} does not exist.", username);
+            throw new InvalidInputException("User does not exist.");
+        }
+
+        int count = (int) user.getTransactions().stream()
+                .filter(t -> t.getCategory().equalsIgnoreCase(category))
+                .count();
+
+        LOGGER.log(Level.INFO, "User {0} has {1} transactions in category {2}.", new Object[]{username, count, category});
         return count;
     }
 
     /**
-     * Prints all available transaction categories.
-     */
-    public void printTransactionCategories() {
-        System.out.println("Available Transaction Categories:");
-        for (String category : transactionCategories) {
-            System.out.println("- " + category);
-        }
-    }
-
-    /**
-     * Resets all transactions using a while loop.
-     */
-    public void resetTransactions() {
-        while (!transactions.isEmpty()) {
-            transactions.remove(0);
-        }
-        System.out.println("All transactions have been reset.");
-    }
-
-    /**
-     * Checks if the user's budget goal is met based on total expenses.
+     * Generates a summary of transactions for a user.
      *
-     * @return True if budget goal is met, else false.
+     * @param username The username of the user.
+     * @return A TransactionSummary object containing the summary.
+     * @throws InvalidInputException if the user does not exist.
      */
-    public boolean isBudgetGoalMet() {
-        if (user != null) {
-            BigDecimal totalExpenses = getTotalExpenses();
-            BigDecimal budgetGoals = user.getBudgetGoals();
-            if (totalExpenses.compareTo(budgetGoals) <= 0) {
-                return true;
-            } else {
-                System.out.println("Budget goal exceeded.");
-                return false;
-            }
-        } else {
-            System.out.println("User information is not available.");
-            return false;
+    public TransactionSummary getTransactionSummary(String username) throws InvalidInputException {
+        User user = userService.getUser(username);
+        if (user == null) {
+            LOGGER.log(Level.WARNING, "User {0} does not exist.", username);
+            throw new InvalidInputException("User does not exist.");
         }
+
+        BigDecimal totalIncome = user.getTransactions().stream()
+                .filter(t -> t.getType() == TransactionType.INCOME)
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalExpenses = user.getTransactions().stream()
+                .filter(t -> t.getType() == TransactionType.EXPENSE)
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        TransactionSummary summary = new TransactionSummary(totalIncome, totalExpenses);
+        LOGGER.log(Level.INFO, "Transaction summary for user {0}: {1}", new Object[]{username, summary});
+        return summary;
     }
 
     /**
      * Represents a summary of user transactions.
      */
-    public class TransactionSummary {
+    public static class TransactionSummary {
         private final BigDecimal totalIncome;
         private final BigDecimal totalExpenses;
 
         /**
          * Constructor for TransactionSummary.
          *
-         * @param totalIncome  Total income from transactions.
+         * @param totalIncome   Total income from transactions.
          * @param totalExpenses Total expenses from transactions.
          */
         public TransactionSummary(BigDecimal totalIncome, BigDecimal totalExpenses) {
@@ -178,52 +126,40 @@ public class UserTransaction {
             this.totalExpenses = totalExpenses.setScale(2, RoundingMode.HALF_UP);
         }
 
+        /**
+         * Gets the total income.
+         *
+         * @return The total income.
+         */
         public BigDecimal getTotalIncome() {
             return totalIncome;
         }
 
+        /**
+         * Gets the total expenses.
+         *
+         * @return The total expenses.
+         */
         public BigDecimal getTotalExpenses() {
             return totalExpenses;
         }
 
+        /**
+         * Gets the net balance.
+         *
+         * @return The net balance.
+         */
         public BigDecimal getNetBalance() {
             return totalIncome.subtract(totalExpenses).setScale(2, RoundingMode.HALF_UP);
         }
-    }
 
-    /**
-     * Generates a summary of transactions including total income and expenses.
-     *
-     * @return A TransactionSummary object containing the summary.
-     */
-    public TransactionSummary getTransactionSummary() {
-        BigDecimal totalIncome = BigDecimal.ZERO;
-        for (Transaction transaction : transactions) {
-            if (transaction != null) {
-                if (transaction.getAmount().compareTo(BigDecimal.ZERO) > 0) {
-                    totalIncome = totalIncome.add(transaction.getAmount());
-                }
-            }
+        @Override
+        public String toString() {
+            return "TransactionSummary{" +
+                    "totalIncome=" + totalIncome +
+                    ", totalExpenses=" + totalExpenses +
+                    ", netBalance=" + getNetBalance() +
+                    '}';
         }
-        return new TransactionSummary(totalIncome, getTotalExpenses());
-    }
-
-    /**
-     * Finds a transaction by its unique identifier.
-     *
-     * @param transactionId The ID of the transaction to find.
-     * @return The Transaction object if found, else null.
-     */
-    public Transaction findTransactionById(String transactionId) {
-        if (transactionId != null && !transactionId.isEmpty()) {
-            for (Transaction transaction : transactions) {
-                if (transaction != null && transaction.getEntityId().equals(transactionId)) { // Using getEntityId()
-                    return transaction;
-                }
-            }
-        } else {
-            throw new IllegalArgumentException("Transaction ID cannot be null or empty.");
-        }
-        return null;
     }
 }

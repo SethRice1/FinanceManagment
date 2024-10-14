@@ -1,105 +1,72 @@
 package models;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Class representing a User in the system.
+ * Represents a user in the system.
  */
-public class User {
-    private final String userId; // Declared as final
-    private String username;
-    private String password; // Consider using hashed passwords in real applications
-    private String email;
-    private BigDecimal budgetGoals; // Added attribute for budget goals
+public class User implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    private final String username;
+    private final String password; // Consider storing hashed passwords
+    private final String email;
+    private final BigDecimal budgetGoals;
+    private final UserRole role;
+    private final List<Transaction> transactions;
 
     /**
      * Constructor for User.
      *
-     * @param username     The username of the user.
-     * @param password     The password of the user.
-     * @param email        The email address of the user.
-     * @param budgetGoals  The budget goals for the user.
+     * @param username     The username.
+     * @param password     The password.
+     * @param email        The email address.
+     * @param budgetGoals  The budget goals.
+     * @param role         The user role.
      */
-    public User(String username, String password, String email, BigDecimal budgetGoals) {
-        this.userId = UUID.randomUUID().toString(); // Generates a unique ID
+    public User(String username, String password, String email, BigDecimal budgetGoals, UserRole role) {
         this.username = username;
         this.password = password;
         this.email = email;
         this.budgetGoals = budgetGoals;
+        this.role = role;
+        this.transactions = new ArrayList<>();
     }
 
-    // Getters and Setters
-
-    public String getUserId() {
-        return userId;
-    }
-
-    // No setter for userId as it's generated automatically and final
-
+    // Getter methods
     public String getUsername() {
         return username;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
     public String getPassword() {
         return password;
-    }
-
-    /**
-     * Sets the user's password.
-     *
-     * @param password The new password.
-     */
-    public void setPassword(String password) {
-        this.password = password; // In real applications, hash the password before setting
-    }
+    } // In real applications, passwords should be hashed and handled securely.
 
     public String getEmail() {
         return email;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    /**
-     * Gets the budget goals of the user.
-     *
-     * @return The budget goals as BigDecimal.
-     */
     public BigDecimal getBudgetGoals() {
         return budgetGoals;
     }
 
-    /**
-     * Sets the budget goals of the user.
-     *
-     * @param budgetGoals The new budget goals.
-     */
-    public void setBudgetGoals(BigDecimal budgetGoals) {
-        if (budgetGoals != null && budgetGoals.compareTo(BigDecimal.ZERO) >= 0) {
-            this.budgetGoals = budgetGoals;
-        } else {
-            throw new IllegalArgumentException("Budget goals must be a non-negative value.");
-        }
+    public UserRole getRole() {
+        return role;
+    }
+
+    public List<Transaction> getTransactions() {
+        return transactions;
     }
 
     /**
-     * Overrides the default toString method to provide a string representation of the User.
+     * Adds a transaction to the user's transaction list.
      *
-     * @return A string representation of the User.
+     * @param transaction The transaction to add.
      */
-    @Override
-    public String toString() {
-        return "User{" +
-                "userId='" + userId + '\'' +
-                ", username='" + username + '\'' +
-                ", email='" + email + '\'' +
-                ", budgetGoals=" + budgetGoals +
-                '}';
+    public void addTransaction(Transaction transaction) {
+        transactions.add(transaction);
     }
 }

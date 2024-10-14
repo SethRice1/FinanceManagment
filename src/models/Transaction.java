@@ -4,80 +4,103 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
- * Class representing a financial transaction.
+ * Represents a financial transaction.
  */
-public class Transaction {
-    private String entityId;
-    private String description;
-    private BigDecimal amount;
-    private String category;
+public class Transaction extends FinancialEntity {
+    private static final long serialVersionUID = 1L;
+
+    private final String transactionId;
+    private final String description;
+    private final String category;
+    private final BigDecimal amount;
+    private final TransactionType type;
 
     /**
-     * Constructor for Transaction.
-     *
-     * @param description Description of the transaction.
-     * @param amount      Amount of the transaction.
-     * @param category    Category of the transaction.
+     * Private constructor to enforce the use of Builder.
      */
-    public Transaction(String description, BigDecimal amount, String category) {
-        this.entityId = UUID.randomUUID().toString(); // Generates a unique ID
-        this.description = description;
-        this.amount = amount;
-        this.category = category;
+    private Transaction(Builder builder) {
+        this.transactionId = UUID.randomUUID().toString();
+        this.description = builder.description;
+        this.category = builder.category;
+        this.amount = builder.amount;
+        this.type = builder.type;
     }
 
-    // Getters and Setters
-
-    public String getEntityId() {
-        return entityId;
+    // Getter methods
+    public String getTransactionId() {
+        return transactionId;
     }
-
-    // No setter for entityId as it's generated automatically
 
     public String getDescription() {
         return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public void setAmount(BigDecimal amount) {
-        if (amount != null) {
-            this.amount = amount;
-        } else {
-            throw new IllegalArgumentException("Amount cannot be null.");
-        }
     }
 
     public String getCategory() {
         return category;
     }
 
-    public void setCategory(String category) {
-        if (category != null && !category.isEmpty()) {
-            this.category = category;
-        } else {
-            throw new IllegalArgumentException("Category cannot be null or empty.");
-        }
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    public TransactionType getType() {
+        return type;
     }
 
     /**
-     * Overrides the default toString method to provide a string representation of the Transaction.
-     *
-     * @return A string representation of the Transaction.
+     * Builder class for Transaction.
      */
+    public static class Builder {
+        private String description;
+        private String category;
+        private BigDecimal amount;
+        private TransactionType type;
+
+        public Builder setDescription(String description) {
+            if (description == null || description.isEmpty()) {
+                throw new IllegalArgumentException("Description cannot be null or empty.");
+            }
+            this.description = description;
+            return this;
+        }
+
+        public Builder setCategory(String category) {
+            if (category == null || category.isEmpty()) {
+                throw new IllegalArgumentException("Category cannot be null or empty.");
+            }
+            this.category = category;
+            return this;
+        }
+
+        public Builder setAmount(BigDecimal amount) {
+            if (amount == null || amount.compareTo(BigDecimal.ZERO) < 0) {
+                throw new IllegalArgumentException("Amount must be non-negative.");
+            }
+            this.amount = amount;
+            return this;
+        }
+
+        public Builder setType(TransactionType type) {
+            if (type == null) {
+                throw new IllegalArgumentException("Transaction type cannot be null.");
+            }
+            this.type = type;
+            return this;
+        }
+
+        public Transaction build() {
+            return new Transaction(this);
+        }
+    }
+
     @Override
     public String toString() {
         return "Transaction{" +
-                "entityId='" + entityId + '\'' +
+                "transactionId='" + transactionId + '\'' +
                 ", description='" + description + '\'' +
-                ", amount=" + amount +
                 ", category='" + category + '\'' +
+                ", amount=" + amount +
+                ", type=" + type +
                 '}';
     }
 }

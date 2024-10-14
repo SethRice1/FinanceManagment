@@ -1,35 +1,52 @@
 package services;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import models.User;
+import models.Budget;
 
+/**
+ * Handles file operations for saving and loading budgets.
+ */
 public class FileManager {
+    private final String filePath;
 
-    private final String userFilePath;
-
-    // Constructor that initializes the file path
-    public FileManager(String userFilePath) {
-        this.userFilePath = userFilePath;
+    /**
+     * Constructor for FileManager.
+     *
+     * @param filePath The path to the file.
+     */
+    public FileManager(String filePath) {
+        this.filePath = filePath;
     }
 
-    // Save users to a file
-    public void saveUsers(List<User> users) throws IOException {
-        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(userFilePath))) {
-            out.writeObject(users);
+    /**
+     * Saves the budget to a file.
+     *
+     * @param budget The budget to save.
+     * @throws IOException if an I/O error occurs.
+     */
+    public void saveBudget(Budget budget) throws IOException {
+        try (FileOutputStream fileOut = new FileOutputStream(filePath);
+             ObjectOutputStream outStream = new ObjectOutputStream(fileOut)) {
+            outStream.writeObject(budget);
         }
     }
 
-    // Load users from a file
-    @SuppressWarnings("unchecked")
-    public List<User> loadUsers() throws IOException, ClassNotFoundException {
-        File file = new File(userFilePath);
-        if (!file.exists() || file.length() == 0) {
-            return new ArrayList<>(); // Return an empty list if the file doesn't exist or is empty
+    /**
+     * Loads the budget from a file.
+     *
+     * @return The loaded Budget object, or null if the file does not exist.
+     * @throws IOException            if an I/O error occurs.
+     * @throws ClassNotFoundException if the Budget class is not found.
+     */
+    public Budget loadBudget() throws IOException, ClassNotFoundException {
+        File file = new File(filePath);
+        if (!file.exists()) {
+            return null;
         }
-        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(userFilePath))) {
-            return (List<User>) in.readObject();
+
+        try (FileInputStream fileIn = new FileInputStream(filePath);
+             ObjectInputStream inStream = new ObjectInputStream(fileIn)) {
+            return (Budget) inStream.readObject();
         }
     }
 }
